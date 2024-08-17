@@ -1,0 +1,35 @@
+{
+  "name": "@elumixor/binser",
+  "version": "0.0.1",
+  "description": "Tiny binary serializer for JS/TS",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elumixor/frontils.git"
+  },
+  "files": [
+    "./dist"
+  ],
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "bun run build:bundle && bun run build:declaration",
+    "build:bundle": "bun build ./src/index.ts --outdir ./dist",
+    "build:declaration": "tsc --project tsconfig.json",
+    "lint": "bun run eslint --ext .ts .",
+    "release:patch": "npm version patch -m \"Release v%s\" && git push --tags",
+    "release:minor": "npm version minor -m \"Release v%s\" && git push --tags",
+    "release:major": "npm version major -m \"Release v%s\" && git push --tags"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@elumixor/eslint": "^0.2.0",
+    "@types/bun": "^1.1.6",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "reflect-metadata": "^0.2.2"
+  }
+}
