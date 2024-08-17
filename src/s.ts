@@ -1,6 +1,8 @@
 import { addMetadata, getMetadata } from "./metadata";
 import { serializeValue, deserializeValue } from "./serialization";
 
+type Constructor = abstract new (...args: unknown[]) => object;
+
 export const s = {
     i32: (target: object, key: string): void => {
         addMetadata(target, key, "i32");
@@ -59,11 +61,10 @@ export const s = {
 
         return finalBuffer;
     },
-    deserialize<T extends abstract new (...args: unknown[]) => object>(buffer: ArrayBuffer, Class: T): InstanceType<T> {
+    deserialize<T extends Constructor>(buffer: ArrayBuffer, Class: T, offset = 0): InstanceType<T> {
         const obj = {} as InstanceType<T>;
         const [propertyKeys, serializationTypes] = getMetadata(Class);
 
-        let offset = 0;
         for (let i = 0; i < propertyKeys.length; i++) {
             const key = propertyKeys[i];
             const type = serializationTypes[i];
@@ -75,6 +76,53 @@ export const s = {
         }
 
         Reflect.setPrototypeOf(obj, Class.prototype as object);
+
+        return obj;
+    },
+    serializeArray(arr: unknown[], type: string): ArrayBuffer {
+        const length = arr.length;
+        const lengthBuffer = new ArrayBuffer(4);
+        new DataView(lengthBuffer).setUint32(0, length, true);
+
+        const valueBuffers = arr.map((value) => serializeValue(value, type));
+
+        const totalByteLength = valueBuffers.reduce((sum, buffer) => sum + buffer.byteLength, 0);
+        const finalBuffer = new ArrayBuffer(4 + totalByteLength);
+        const finalView = new Uint8Array(finalBuffer);
+
+        finalView.set(new Uint8Array(lengthBuffer), 0);
+
+        let offset = 4;
+        for (const buffer of valueBuffers) {
+            finalView.set(new Uint8Array(buffer), offset);
+            offset += buffer.byteLength;
+        }
+
+        return finalBuffer;
+    },
+    deserializeArray<T extends Constructor>(buffer: ArrayBuffer, Class: T): InstanceType<T>[] {
+        const length = new DataView(buffer).getUint32(0, true);
+        const obj = new Array(length) as InstanceType<T>[];
+
+        let offset = 4;
+        for (let i = 0; i < length; i++) {
+            const instance = {} as InstanceType<T>;
+            const [propertyKeys, serializationTypes] = getMetadata(Class);
+
+            for (let i = 0; i < propertyKeys.length; i++) {
+                const key = propertyKeys[i];
+                const type = serializationTypes[i];
+
+                const [property, bytesUsed] = deserializeValue(buffer, offset, type);
+
+                Reflect.set(instance, key, property);
+                offset += bytesUsed;
+            }
+
+            Reflect.setPrototypeOf(instance, Class.prototype as object);
+
+            obj[i] = instance;
+        }
 
         return obj;
     },
