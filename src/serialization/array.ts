@@ -1,9 +1,14 @@
-export function serializeArray<T>(array: T[], serializeFn: (value: T) => ArrayBufferLike) {
+import type { Constructor } from "../types";
+import { deserialize, serialize } from "./serialize";
+import type { PrimitiveType, JSType, ObjectType, SerializableType } from "../types";
+
+export function serializeArray(array: unknown[], type: SerializableType) {
     const length = array.length;
     const lengthBuffer = new ArrayBuffer(4);
     new DataView(lengthBuffer).setUint32(0, length, true);
 
-    const buffers = array.map(serializeFn);
+    // Serialize recursively
+    const buffers = array.map((value) => serialize(value, type));
 
     const totalByteLength = buffers.reduce((sum, buffer) => sum + buffer.byteLength, 0);
     const finalBuffer = new ArrayBuffer(4 + totalByteLength);
@@ -19,11 +24,12 @@ export function serializeArray<T>(array: T[], serializeFn: (value: T) => ArrayBu
     return finalBuffer;
 }
 
-export function deserializeArray<T>(
+export function deserializeArray<T extends SerializableType, U extends Constructor>(
     buffer: ArrayBuffer,
     offset: number,
-    deserializeFn: (buffer: ArrayBuffer, offset: number) => readonly [T, number],
-): [T[], number] {
+    type: T,
+    Class?: U,
+) {
     const baseOffset = offset;
 
     const length = new DataView(buffer).getUint32(offset, true);
@@ -31,11 +37,19 @@ export function deserializeArray<T>(
 
     const array = [];
     for (let i = 0; i < length; i++) {
-        const [value, bytesUsed] = deserializeFn(buffer, offset);
+        let value, bytesUsed;
+
+        // Deserialize each element recursively
+        if (type === "obj") {
+            if (!Class) throw new Error("Class is required");
+            ({ value, bytesUsed } = deserialize<SerializableType<ObjectType>, U>(buffer, offset, type, Class));
+        } else {
+            ({ value, bytesUsed } = deserialize(buffer, offset, type as PrimitiveType));
+        }
+
         array.push(value);
         offset += bytesUsed;
     }
 
-    return [array, offset - baseOffset] as const;
+    return { value: array as JSType<T>[], bytesUsed: offset - baseOffset };
 }
-

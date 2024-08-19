@@ -7,5 +7,5 @@ export function serializeDate(value: Date): ArrayBuffer {
 
 export function deserializeDate(buffer: ArrayBuffer, offset: number) {
     const timestamp = new DataView(buffer).getFloat64(offset, true);
-    return [new Date(timestamp), 8] as const;
+    return { value: new Date(timestamp), bytesUsed: 8 };
 }

@@ -5,7 +5,7 @@ export function serializeFloat(value: number) {
 }
 
 export function deserializeFloat(buffer: ArrayBuffer, offset: number) {
-    return [new DataView(buffer).getFloat32(offset, true), 4] as const;
+    return { value: new DataView(buffer).getFloat32(offset, true), bytesUsed: 4 };
 }
 
 export function serializeFloat64(value: number) {
@@ -15,5 +15,5 @@ export function serializeFloat64(value: number) {
 }
 
 export function deserializeFloat64(buffer: ArrayBuffer, offset: number) {
-    return [new DataView(buffer).getFloat64(offset, true), 8] as const;
+    return { value: new DataView(buffer).getFloat64(offset, true), bytesUsed: 8 };
 }

@@ -1,4 +1,4 @@
-export function serializeString(value: string) {
+export function serializeStr(value: string) {
     const length = value.length;
     const lengthBuffer = new ArrayBuffer(4);
     new DataView(lengthBuffer).setUint32(0, length, true);
@@ -14,10 +14,9 @@ export function serializeString(value: string) {
     return finalBuffer;
 }
 
-export function deserializeString(buffer: ArrayBuffer, offset: number) {
+export function deserializeStr(buffer: ArrayBuffer, offset: number) {
     const length = new DataView(buffer).getUint32(offset, true);
     const stringBuffer = buffer.slice(offset + 4, offset + 4 + length);
     const str = new TextDecoder().decode(stringBuffer);
-    return [str, 4 + length] as const;
+    return { value: str, bytesUsed: 4 + length };
 }
-

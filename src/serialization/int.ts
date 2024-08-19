@@ -5,5 +5,5 @@ export function serializeInt(value: number) {
 }
 
 export function deserializeInt(buffer: ArrayBuffer, offset: number) {
-    return [new DataView(buffer).getInt32(offset, true), 4] as const;
+    return { value: new DataView(buffer).getInt32(offset, true), bytesUsed: 4 };
 }

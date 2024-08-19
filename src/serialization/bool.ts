@@ -5,6 +5,5 @@ export function serializeBool(value: boolean) {
 }
 
 export function deserializeBool(buffer: ArrayBuffer, offset: number) {
-    return [new DataView(buffer).getUint8(offset) === 1, 1] as const;
+    return { value: new DataView(buffer).getUint8(offset) === 1, bytesUsed: 1 };
 }
-
